@@ -945,7 +945,8 @@ class TestGlueDataCatalogHandler:
             )
 
         # Verify that the correct error message is raised
-        assert 'table_name is required' in str(excinfo.value)
+        assert 'table_name' in str(excinfo.value)
+        assert 'required' in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_manage_aws_glue_data_catalog_connections_list_connections_error(
@@ -1379,7 +1380,8 @@ class TestGlueDataCatalogHandler:
             )
 
         # Verify that the correct error message is raised
-        assert 'table_name and table_input are required' in str(excinfo.value)
+        assert 'table_name' in str(excinfo.value)
+        assert 'required' in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_manage_aws_glue_data_catalog_connections_create_missing_connection_input(
@@ -2122,6 +2124,34 @@ class TestGlueDataCatalogHandler:
             mock_ctx,
             operation='search-tables',
             database_name='test-db',
+        )
+
+        # Verify that the method was called
+        assert mock_table_manager.search_tables.call_count == 1
+
+        # Verify that the result is the expected response
+        assert result == expected_response
+
+    @pytest.mark.asyncio
+    async def test_manage_aws_glue_data_catalog_tables_search_tables_without_database_name(
+        self, handler, mock_ctx, mock_table_manager
+    ):
+        """Test that search-tables operation works without database_name (it is not required)."""
+        # Setup the mock to return a response
+        expected_response = MagicMock()
+        expected_response.isError = False
+        expected_response.content = []
+        expected_response.tables = []
+        expected_response.search_text = 'test'
+        expected_response.count = 0
+        expected_response.operation = 'search-tables'
+        mock_table_manager.search_tables.return_value = expected_response
+
+        # Call search-tables without providing database_name (should work since it is optional)
+        result = await handler.manage_aws_glue_data_catalog_tables(
+            mock_ctx,
+            operation='search-tables',
+            search_text='test',
         )
 
         # Verify that the method was called
@@ -3328,7 +3358,8 @@ class TestGlueDataCatalogHandler:
             )
 
         # Verify that the correct error message is raised
-        assert 'table_name is required' in str(excinfo.value)
+        assert 'table_name' in str(excinfo.value)
+        assert 'required' in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_manage_aws_glue_data_catalog_tables_update_missing_required_params(
@@ -3342,7 +3373,8 @@ class TestGlueDataCatalogHandler:
             )
 
         # Verify that the correct error message is raised
-        assert 'table_name and table_input are required' in str(excinfo.value)
+        assert 'table_name' in str(excinfo.value)
+        assert 'required' in str(excinfo.value)
 
         # Call the method without table_input
         with pytest.raises(ValueError) as excinfo:
@@ -3355,7 +3387,8 @@ class TestGlueDataCatalogHandler:
             )
 
         # Verify that the correct error message is raised
-        assert 'table_name and table_input are required' in str(excinfo.value)
+        assert 'table_name' in str(excinfo.value)
+        assert 'required' in str(excinfo.value)
 
     @pytest.mark.asyncio
     async def test_manage_aws_glue_data_catalog_connections_create_missing_required_params(

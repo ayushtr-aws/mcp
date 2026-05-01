@@ -251,11 +251,11 @@ class GlueDataCatalogHandler:
             ),
         ],
         database_name: Annotated[
-            str,
+            Optional[str],
             Field(
-                description='Name of the database containing the table.',
+                description='Name of the database containing the table. Required for create-table, delete-table, get-table, list-tables, and update-table operations. Not required for search-tables.',
             ),
-        ],
+        ] = None,
         table_name: Annotated[
             Optional[str],
             Field(
@@ -308,17 +308,18 @@ class GlueDataCatalogHandler:
         - **get-table**: Retrieve detailed information about a specific table
         - **list-tables**: List all tables in the specified database
         - **update-table**: Update an existing table's properties
-        - **search-tables**: Search for tables using text matching
+        - **search-tables**: Search for tables using text matching (database_name not required)
 
         ## Usage Tips
         - Table names must be unique within a database
         - Use get-table or list-tables operations to check existing tables before creating
         - Table input should include storage descriptor, columns, and partitioning information
+        - For search-tables, database_name is optional; omit it to search across all databases
 
         Args:
             ctx: MCP context
             operation: Operation to perform
-            database_name: Name of the database
+            database_name: Name of the database (required for all operations except search-tables)
             table_name: Name of the table
             catalog_id: ID of the catalog (optional, defaults to account ID)
             table_input: Table definition
@@ -384,8 +385,10 @@ class GlueDataCatalogHandler:
                 )
 
             elif operation == 'get-table':
-                if table_name is None:
-                    raise ValueError('table_name is required for get-table operation')
+                if database_name is None or table_name is None:
+                    raise ValueError(
+                        'database_name and table_name are required for get-table operation'
+                    )
                 return await self.data_catalog_table_manager.get_table(
                     ctx=ctx,
                     database_name=database_name,
@@ -394,6 +397,8 @@ class GlueDataCatalogHandler:
                 )
 
             elif operation == 'list-tables':
+                if database_name is None:
+                    raise ValueError('database_name is required for list-tables operation')
                 return await self.data_catalog_table_manager.list_tables(
                     ctx=ctx,
                     database_name=database_name,
@@ -403,9 +408,9 @@ class GlueDataCatalogHandler:
                 )
 
             elif operation == 'update-table':
-                if table_name is None or table_input is None:
+                if database_name is None or table_name is None or table_input is None:
                     raise ValueError(
-                        'table_name and table_input are required for update-table operation'
+                        'database_name, table_name and table_input are required for update-table operation'
                     )
                 return await self.data_catalog_table_manager.update_table(
                     ctx=ctx,
